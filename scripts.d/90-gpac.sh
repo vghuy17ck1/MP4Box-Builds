@@ -12,6 +12,7 @@ apply_gpac_patches() {
         "$ROOT_DIR/patches/gpac/0004-remove-unused-postproc-link.patch"
         "$ROOT_DIR/patches/gpac/0005-use-static-pkg-config-for-cross.patch"
         "$ROOT_DIR/patches/gpac/0006-remove-windows-rpath-link.patch"
+        "$ROOT_DIR/patches/gpac/0007-remove-windows-shared-soname.patch"
     )
     [[ -f "$source_dir/src/utils/downloader_ssl.c" && -f "$source_dir/src/utils/downloader_curl.c" ]] || die "GPAC downloader sources missing"
     sed -i 's/\r$//' "$source_dir/src/utils/downloader_ssl.c" "$source_dir/src/utils/downloader_curl.c"
@@ -64,7 +65,9 @@ build_gpac() {
     fi
     local -a linkage_args=()
     [[ "${LINKAGE:-static}" == static ]] && linkage_args=(--static-build --static-modules)
-    local -a args=(--prefix="$prefix" "${linkage_args[@]}" --enable-fin --enable-fout --enable-dasher --use-zlib="$prefix" --use-ffmpeg=system --cc="$gpac_cc" --cxx="$gpac_cxx" --extra-cflags="$gpac_extra_cflags" --extra-ldflags="-L$prefix/lib $LDFLAGS" --target-os="$TARGET_OS" --cpu="$TARGET_ARCH")
+    local ffmpeg_option="--use-ffmpeg=system"
+    [[ "${LINKAGE:-static}" == shared ]] && ffmpeg_option="--use-ffmpeg=$prefix"
+    local -a args=(--prefix="$prefix" "${linkage_args[@]}" --enable-fin --enable-fout --enable-dasher --use-zlib="$prefix" "$ffmpeg_option" --cc="$gpac_cc" --cxx="$gpac_cxx" --extra-cflags="$gpac_extra_cflags" --extra-ldflags="-L$prefix/lib $LDFLAGS" --target-os="$TARGET_OS" --cpu="$TARGET_ARCH")
     if [[ -n "$gpac_cross_prefix" ]] && gpac_has_option "$help_file" --cross-prefix; then
         args+=(--cross-prefix="$gpac_cross_prefix")
     fi

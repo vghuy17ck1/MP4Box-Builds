@@ -109,7 +109,7 @@ printf '%s\n' "See BUILD_INFO.json and FEATURES.json for verification status." >
 if [[ "$LINKAGE" == static ]]; then
     printf '%s\n' "--static-build --static-modules --use-ffmpeg=system" >"$BUILD_ROOT/configure-arguments.txt"
 else
-    printf '%s\n' "--use-ffmpeg=system" >"$BUILD_ROOT/configure-arguments.txt"
+    printf '%s\n' "--use-ffmpeg=$PREFIX" >"$BUILD_ROOT/configure-arguments.txt"
 fi
 if [[ "$target" == linux64 ]] && command -v ffmpeg >/dev/null 2>&1; then
     bash "$ROOT_DIR/tests/fixtures/create-sample.sh" "$ROOT_DIR/tests/fixtures/sample.mkv"

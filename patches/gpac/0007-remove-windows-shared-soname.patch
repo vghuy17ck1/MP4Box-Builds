@@ -1,0 +1,11 @@
+diff --git a/src/Makefile b/src/Makefile
+--- a/src/Makefile
++++ b/src/Makefile
+@@
+ LD_SONAME="-Wl,-soname,libgpac.so.$(VERSION_MAJOR)"
++ifeq ($(CONFIG_WIN32),yes)
++LD_SONAME=
++endif
+ ifeq ($(CONFIG_DARWIN),yes)
+ LD_SONAME=
+ endif
