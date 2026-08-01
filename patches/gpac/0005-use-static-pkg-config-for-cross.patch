@@ -1,12 +1,29 @@
 diff --git a/configure b/configure
 --- a/configure
 +++ b/configure
-@@ -65 +65 @@
+@@ -68,7 +68,7 @@
+ strip="strip"
+ fi
+
 -pkg_config="pkg-config"
 +pkg_config="${PKG_CONFIG:-pkg-config}"
-@@ -905 +905 @@
--    if test "$cross_prefix" = "" -a "$pkg_config" != "no"; then
-+    if test "$pkg_config" != "no"; then
-@@ -1431 +1431 @@
+ windres="windres"
+ readelf="readelf"
+ install="${INSTALL:=install}"
+@@ -902,8 +902,8 @@
+ fi
+
+ #check pkg_config
+-if test "$cross_prefix" = "" -a "$pkg_config" != "no"; then
++if test "$pkg_config" != "no"; then
+     if ! $pkg_config --version >/dev/null 2>>$logs ; then
+         pkg_config="no"
+     fi
+@@ -1429,7 +1429,7 @@
+ #test pkgconfig
+     if test "$forced" != "local" -a "$custom" != "yes" ; then
 -        if test "$cross_prefix" = "" -a "$is_port" != "yes" -a "$pkg_config" != "no" -a "$pkg_cfg_name" != ""; then
 +        if test "$is_port" != "yes" -a "$pkg_config" != "no" -a "$pkg_cfg_name" != ""; then
+             if $pkg_config --exists $pkg_cfg_name ; then
+                 pck_cflags=`$pkg_config --cflags $pkg_cfg_name`
+                 pck_ldflags=`$pkg_config --libs $pkg_cfg_name`
