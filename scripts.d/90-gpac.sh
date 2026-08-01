@@ -90,7 +90,7 @@ build_gpac() {
         export CC="$gpac_cc" CXX="$gpac_cxx" AR="$gpac_ar" RANLIB="$gpac_ranlib" STRIP="$gpac_strip" WINDRES="$gpac_windres"
         cd "$source_dir"
         ./configure "${args[@]}"
-    ) >"$BUILD_LOG_DIR/gpac-configure.log" 2>&1 || { cat "$source_dir/config.log" >&2 || true; cat "$BUILD_LOG_DIR/gpac-configure.log" >&2; return 1; }
+    ) >"$BUILD_LOG_DIR/gpac-configure.log" 2>&1 || { [[ -f "$source_dir/config.log" ]] && cp "$source_dir/config.log" "$BUILD_LOG_DIR/gpac-config.log"; cat "$source_dir/config.log" >&2 || true; cat "$BUILD_LOG_DIR/gpac-configure.log" >&2; return 1; }
     if grep -Eiq '^FFmpeg: (no|force-no)' "$BUILD_LOG_DIR/gpac-configure.log"; then
         if [[ -f "$source_dir/config.log" ]]; then
             grep -Eiq 'ffmpeg|libav|pkg-config|cannot|error|failed' "$source_dir/config.log" >&2 || true
