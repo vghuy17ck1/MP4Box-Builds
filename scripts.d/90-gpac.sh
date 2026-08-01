@@ -75,6 +75,17 @@ build_gpac() {
             args+=("$option")
         fi
     done
+    if [[ "${LINKAGE:-static}" == shared ]]; then
+        local pkg_config_log="$BUILD_LOG_DIR/gpac-pkg-config.log"
+        {
+            printf 'PKG_CONFIG=%s\n' "${PKG_CONFIG:-pkg-config}"
+            printf 'PKG_CONFIG_PATH=%s\n' "${PKG_CONFIG_PATH:-}"
+            printf 'PKG_CONFIG_LIBDIR=%s\n' "${PKG_CONFIG_LIBDIR:-}"
+            "${PKG_CONFIG:-pkg-config}" --version
+            "${PKG_CONFIG:-pkg-config}" --exists libavcodec libavformat libavutil libswscale
+            "${PKG_CONFIG:-pkg-config}" --cflags --libs libavcodec libavformat libavutil libswscale
+        } >"$pkg_config_log" 2>&1 || { cat "$pkg_config_log" >&2; return 1; }
+    fi
     (
         export CC="$gpac_cc" CXX="$gpac_cxx" AR="$gpac_ar" RANLIB="$gpac_ranlib" STRIP="$gpac_strip" WINDRES="$gpac_windres"
         cd "$source_dir"
