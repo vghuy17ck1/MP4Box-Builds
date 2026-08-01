@@ -10,7 +10,7 @@ diff --git a/configure b/configure
  windres="windres"
  readelf="readelf"
  install="${INSTALL:=install}"
-@@ -902,8 +902,8 @@
+@@ -902,7 +902,7 @@
  fi
 
  #check pkg_config
@@ -19,8 +19,8 @@ diff --git a/configure b/configure
      if ! $pkg_config --version >/dev/null 2>>$logs ; then
          pkg_config="no"
      fi
-@@ -1429,7 +1429,7 @@
- #test pkgconfig
+@@ -1429,6 +1429,6 @@
+     #test pkgconfig
      if test "$forced" != "local" -a "$custom" != "yes" ; then
 -        if test "$cross_prefix" = "" -a "$is_port" != "yes" -a "$pkg_config" != "no" -a "$pkg_cfg_name" != ""; then
 +        if test "$is_port" != "yes" -a "$pkg_config" != "no" -a "$pkg_cfg_name" != ""; then
