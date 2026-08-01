@@ -14,7 +14,7 @@ fi
 "$mp4box" -version
 "$mp4box" -h
 "$mp4box" -h dash
-"$gpac" -version
+"$gpac" -h >/dev/null 2>&1
 "$gpac" -hx filters >/dev/null 2>&1 || true
 "$gpac" -hx formats >/dev/null 2>&1 || true
 "$gpac" -hx 'ffdmx:*' >/dev/null 2>&1 || true
