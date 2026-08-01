@@ -93,6 +93,7 @@ build_gpac() {
     ) >"$BUILD_LOG_DIR/gpac-configure.log" 2>&1 || { [[ -f "$source_dir/config.log" ]] && cp "$source_dir/config.log" "$BUILD_LOG_DIR/gpac-config.log"; cat "$source_dir/config.log" >&2 || true; cat "$BUILD_LOG_DIR/gpac-configure.log" >&2; return 1; }
     if grep -Eiq '^FFmpeg: (no|force-no)' "$BUILD_LOG_DIR/gpac-configure.log"; then
         if [[ -f "$source_dir/config.log" ]]; then
+            cp "$source_dir/config.log" "$BUILD_LOG_DIR/gpac-config.log"
             grep -Eiq 'ffmpeg|libav|pkg-config|cannot|error|failed' "$source_dir/config.log" >&2 || true
         fi
         cat "$BUILD_LOG_DIR/gpac-configure.log" >&2
