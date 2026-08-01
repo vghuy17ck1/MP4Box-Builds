@@ -1,0 +1,305 @@
+name: Build
+
+on:
+  workflow_call:
+    inputs:
+      target:
+        required: false
+        type: string
+        default: all
+      variant:
+        required: false
+        type: string
+        default: all
+      source_channel:
+        required: false
+        type: string
+        default: all
+      gpac_ref:
+        required: false
+        type: string
+        default: ''
+      ffmpeg_ref:
+        required: false
+        type: string
+        default: ''
+      allow_prerelease:
+        required: false
+        type: boolean
+        default: false
+    outputs:
+      release_version:
+        value: ${{ jobs.resolve.outputs.release_gpac_version }}
+      release_commit:
+        value: ${{ jobs.resolve.outputs.release_gpac_commit }}
+      master_commit:
+        value: ${{ jobs.resolve.outputs.master_gpac_commit }}
+      master_short_commit:
+        value: ${{ jobs.resolve.outputs.master_gpac_short_commit }}
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Target to build
+        required: false
+        type: choice
+        default: all
+        options:
+          - all
+          - linux64
+          - linuxarm64
+          - win64
+          - winarm64
+      variant:
+        description: Variant to build
+        required: false
+        type: choice
+        default: all
+        options:
+          - all
+          - minimal
+          - full
+      source_channel:
+        description: GPAC source channel to build
+        required: false
+        type: choice
+        default: all
+        options:
+          - all
+          - release
+          - master
+      gpac_ref:
+        description: Explicit GPAC ref; builds one custom-channel matrix entry
+        required: false
+        type: string
+        default: ''
+      ffmpeg_ref:
+        description: Explicit FFmpeg ref
+        required: false
+        type: string
+        default: ''
+      allow_prerelease:
+        description: Allow a prerelease GPAC release when resolving release
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}-${{ inputs.target || 'all' }}-${{ inputs.variant || 'all' }}-${{ inputs.source_channel || 'all' }}
+  cancel-in-progress: false
+
+jobs:
+  resolve:
+    name: Resolve immutable source refs
+    runs-on: ubuntu-24.04
+    outputs:
+      release_source_channel: ${{ steps.release.outputs.source_channel }}
+      release_gpac_requested_ref: ${{ steps.release.outputs.gpac_requested_ref }}
+      release_gpac_resolved_ref: ${{ steps.release.outputs.gpac_resolved_ref }}
+      release_gpac_release_tag: ${{ steps.release.outputs.gpac_release_tag }}
+      release_gpac_commit: ${{ steps.release.outputs.gpac_commit }}
+      release_gpac_short_commit: ${{ steps.release.outputs.gpac_short_commit }}
+      release_gpac_version: ${{ steps.release.outputs.gpac_version }}
+      release_ffmpeg_requested_ref: ${{ steps.release.outputs.ffmpeg_requested_ref }}
+      release_ffmpeg_resolved_ref: ${{ steps.release.outputs.ffmpeg_resolved_ref }}
+      release_ffmpeg_commit: ${{ steps.release.outputs.ffmpeg_commit }}
+      release_ffmpeg_short_commit: ${{ steps.release.outputs.ffmpeg_short_commit }}
+      master_source_channel: ${{ steps.master.outputs.source_channel }}
+      master_gpac_requested_ref: ${{ steps.master.outputs.gpac_requested_ref }}
+      master_gpac_resolved_ref: ${{ steps.master.outputs.gpac_resolved_ref }}
+      master_gpac_release_tag: ${{ steps.master.outputs.gpac_release_tag }}
+      master_gpac_commit: ${{ steps.master.outputs.gpac_commit }}
+      master_gpac_short_commit: ${{ steps.master.outputs.gpac_short_commit }}
+      master_gpac_version: ${{ steps.master.outputs.gpac_version }}
+      master_ffmpeg_requested_ref: ${{ steps.master.outputs.ffmpeg_requested_ref }}
+      master_ffmpeg_resolved_ref: ${{ steps.master.outputs.ffmpeg_resolved_ref }}
+      master_ffmpeg_commit: ${{ steps.master.outputs.ffmpeg_commit }}
+      master_ffmpeg_short_commit: ${{ steps.master.outputs.ffmpeg_short_commit }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - id: release
+        env:
+          SOURCE_CHANNEL: release
+          GPAC_REF: ${{ inputs.gpac_ref }}
+          FFMPEG_REF: ${{ inputs.ffmpeg_ref }}
+          ALLOW_PRERELEASE: ${{ inputs.allow_prerelease && '1' || '0' }}
+        run: bash ./util/resolve-refs.sh >> "$GITHUB_OUTPUT"
+      - id: master
+        env:
+          SOURCE_CHANNEL: master
+          GPAC_REF: ${{ inputs.gpac_ref }}
+          FFMPEG_REF: ${{ inputs.ffmpeg_ref }}
+          ALLOW_PRERELEASE: ${{ inputs.allow_prerelease && '1' || '0' }}
+        run: bash ./util/resolve-refs.sh >> "$GITHUB_OUTPUT"
+      - env:
+          RELEASE_GPAC: ${{ steps.release.outputs.gpac_commit }}
+          RELEASE_FFMPEG: ${{ steps.release.outputs.ffmpeg_commit }}
+          MASTER_GPAC: ${{ steps.master.outputs.gpac_commit }}
+          MASTER_FFMPEG: ${{ steps.master.outputs.ffmpeg_commit }}
+        run: |
+          {
+            echo '## Resolved sources'
+            echo
+            echo '| Channel | GPAC commit | FFmpeg commit |'
+            echo '| --- | --- | --- |'
+            echo "| release | ${RELEASE_GPAC} | ${RELEASE_FFMPEG} |"
+            echo "| master | ${MASTER_GPAC} | ${MASTER_FFMPEG} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  build:
+    name: ${{ matrix.target }} / ${{ matrix.variant }} / ${{ matrix.channel }}
+    needs: resolve
+    runs-on: ubuntu-24.04
+    if: >-
+      (inputs.target == '' || inputs.target == 'all' || inputs.target == matrix.target) &&
+      (inputs.variant == '' || inputs.variant == 'all' || inputs.variant == matrix.variant) &&
+      ((inputs.gpac_ref == '' && (inputs.source_channel == '' || inputs.source_channel == 'all' || inputs.source_channel == matrix.channel)) ||
+      (inputs.gpac_ref != '' && matrix.channel == 'release'))
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [linux64, linuxarm64, win64, winarm64]
+        variant: [minimal, full]
+        channel: [release, master]
+    env:
+      TZ: UTC
+      LC_ALL: C
+      LANG: C
+      SOURCE_DATE_EPOCH: '0'
+      MATRIX_CHANNEL: ${{ matrix.channel }}
+      BUILD_CHANNEL: ${{ inputs.gpac_ref != '' && 'custom' || matrix.channel }}
+      GPAC_REF: ${{ matrix.channel == 'release' && needs.resolve.outputs.release_gpac_commit || needs.resolve.outputs.master_gpac_commit }}
+      GPAC_REQUESTED_REF: ${{ matrix.channel == 'release' && needs.resolve.outputs.release_gpac_requested_ref || needs.resolve.outputs.master_gpac_requested_ref }}
+      GPAC_RELEASE_TAG: ${{ matrix.channel == 'release' && needs.resolve.outputs.release_gpac_release_tag || needs.resolve.outputs.master_gpac_release_tag }}
+      GPAC_RESOLVED_REF: ${{ matrix.channel == 'release' && needs.resolve.outputs.release_gpac_resolved_ref || needs.resolve.outputs.master_gpac_resolved_ref }}
+      FFMPEG_REF: ${{ matrix.channel == 'release' && needs.resolve.outputs.release_ffmpeg_commit || needs.resolve.outputs.master_ffmpeg_commit }}
+      FFMPEG_REQUESTED_REF: ${{ matrix.channel == 'release' && needs.resolve.outputs.release_ffmpeg_requested_ref || needs.resolve.outputs.master_ffmpeg_requested_ref }}
+      FFMPEG_RESOLVED_REF: ${{ matrix.channel == 'release' && needs.resolve.outputs.release_ffmpeg_resolved_ref || needs.resolve.outputs.master_ffmpeg_resolved_ref }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - id: prepare
+        env:
+          TARGET: ${{ matrix.target }}
+          VARIANT: ${{ matrix.variant }}
+        run: |
+          artifact_dir="artifacts/${TARGET}/${VARIANT}/${BUILD_CHANNEL}"
+          cache_key="mp4box-${TARGET}-${VARIANT}-${BUILD_CHANNEL}-${GPAC_REF}-${FFMPEG_REF}-${{ hashFiles('versions.env', 'build.sh', 'util/**', 'scripts.d/**', 'targets/**', 'variants/**', 'patches/**') }}"
+          mkdir -p "$artifact_dir"
+          echo "artifact_dir=$artifact_dir" >> "$GITHUB_OUTPUT"
+          echo "cache_key=$cache_key" >> "$GITHUB_OUTPUT"
+          echo "artifact_name=mp4box-${BUILD_CHANNEL}-${TARGET}-${VARIANT}" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache/restore@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9
+        with:
+          path: |
+            .cache
+            work/cache
+          key: ${{ steps.prepare.outputs.cache_key }}
+      - name: Create synthetic MKV fixture
+        if: matrix.target == 'linux64'
+        run: bash tests/fixtures/create-sample.sh tests/fixtures/sample.mkv
+      - id: package
+        env:
+          ARTIFACT_DIR: ${{ steps.prepare.outputs.artifact_dir }}
+          TARGET: ${{ matrix.target }}
+          VARIANT: ${{ matrix.variant }}
+          SOURCE_CHANNEL: ${{ inputs.gpac_ref != '' && 'custom' || matrix.channel }}
+        run: bash ./build.sh "$TARGET" "$VARIANT" "$SOURCE_CHANNEL"
+      - id: static
+        name: Verify static linkage and target format
+        env:
+          ARTIFACT_DIR: ${{ steps.prepare.outputs.artifact_dir }}
+          TARGET: ${{ matrix.target }}
+        run: bash ./tests/verify-static.sh "$ARTIFACT_DIR" "$TARGET"
+      - id: features
+        name: Verify detected features
+        env:
+          ARTIFACT_DIR: ${{ steps.prepare.outputs.artifact_dir }}
+          VARIANT: ${{ matrix.variant }}
+        run: bash ./tests/verify-features.sh "$ARTIFACT_DIR" "$VARIANT"
+      - id: smoke
+        name: Run native smoke test
+        if: matrix.target == 'linux64'
+        env:
+          ARTIFACT_DIR: ${{ steps.prepare.outputs.artifact_dir }}
+        run: bash ./tests/smoke-test.sh "$ARTIFACT_DIR"
+      - id: dash
+        name: Run native MKV-to-DASH test
+        if: matrix.target == 'linux64'
+        env:
+          ARTIFACT_DIR: ${{ steps.prepare.outputs.artifact_dir }}
+        run: bash ./tests/verify-dash-mkv.sh "$ARTIFACT_DIR"
+      - id: transcode
+        name: Run native transcoding test
+        if: matrix.target == 'linux64' && matrix.variant == 'full'
+        env:
+          ARTIFACT_DIR: ${{ steps.prepare.outputs.artifact_dir }}
+        run: bash ./tests/verify-transcode.sh "$ARTIFACT_DIR"
+      - uses: actions/cache/save@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9
+        if: success()
+        with:
+          path: |
+            .cache
+            work/cache
+          key: ${{ steps.prepare.outputs.cache_key }}
+      - name: Write build summary
+        if: always()
+        env:
+          ARTIFACT_DIR: ${{ steps.prepare.outputs.artifact_dir }}
+          TARGET: ${{ matrix.target }}
+          VARIANT: ${{ matrix.variant }}
+          STATIC_STATUS: ${{ steps.static.outcome }}
+          FEATURE_STATUS: ${{ steps.features.outcome }}
+          SMOKE_STATUS: ${{ steps.smoke.outcome }}
+          DASH_STATUS: ${{ steps.dash.outcome }}
+          TRANSCODE_STATUS: ${{ steps.transcode.outcome }}
+        run: |
+          checksum="unavailable"
+          archive_name="unavailable"
+          toolchain="unavailable"
+          effective_license="unavailable"
+          architecture="unavailable"
+          if [ -d "$ARTIFACT_DIR" ]; then
+            archive="$(find "$ARTIFACT_DIR" -type f \( -name '*.tar.xz' -o -name '*.zip' \) -print -quit)"
+            if [ -n "$archive" ]; then
+              archive_name="$(basename "$archive")"
+              checksum="$(sha256sum "$archive" | awk '{print $1}')"
+            fi
+            build_info="$(find "$ARTIFACT_DIR" -type f -name BUILD_INFO.json -print -quit)"
+            if [ -n "$build_info" ]; then
+              toolchain="$(jq -r '.toolchain_name // "unavailable"' "$build_info")"
+              effective_license="$(jq -r '.effective_license // "unavailable"' "$build_info")"
+              architecture="$(jq -r '.architecture // "unavailable"' "$build_info")"
+            fi
+          fi
+          {
+            echo '## Build summary'
+            echo
+            echo "- Target: ${TARGET}"
+            echo "- Architecture: ${architecture}"
+            echo "- Variant: ${VARIANT}"
+            echo "- Source channel: ${BUILD_CHANNEL}"
+            echo "- GPAC requested ref: ${GPAC_REQUESTED_REF}"
+            echo "- GPAC resolved commit: ${GPAC_REF}"
+            echo "- FFmpeg resolved commit: ${FFMPEG_REF}"
+            echo "- Toolchain: ${toolchain}"
+            echo "- Effective license: ${effective_license}"
+            echo "- Artifact: ${archive_name}"
+            echo "- Static verification: ${STATIC_STATUS}"
+            echo "- Feature verification: ${FEATURE_STATUS}"
+            echo "- Runtime smoke test: ${SMOKE_STATUS}"
+            echo "- MKV-to-DASH test: ${DASH_STATUS}"
+            echo "- Transcoding test: ${TRANSCODE_STATUS}"
+            echo "- SHA-256: ${checksum}"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce
+        if: always()
+        with:
+          name: ${{ steps.prepare.outputs.artifact_name }}
+          path: |
+            ${{ steps.prepare.outputs.artifact_dir }}
+            logs
+            work/logs
+          if-no-files-found: warn
+          retention-days: 14

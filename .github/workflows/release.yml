@@ -1,0 +1,160 @@
+name: Release
+
+on:
+  workflow_call:
+    inputs:
+      target:
+        required: false
+        type: string
+        default: all
+      variant:
+        required: false
+        type: string
+        default: all
+      source_channel:
+        required: false
+        type: string
+        default: all
+      ffmpeg_ref:
+        required: false
+        type: string
+        default: ''
+      allow_prerelease:
+        required: false
+        type: boolean
+        default: false
+      force_rebuild:
+        required: false
+        type: boolean
+        default: false
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Target to publish
+        required: false
+        type: choice
+        default: all
+        options:
+          - all
+          - linux64
+          - linuxarm64
+          - win64
+          - winarm64
+      variant:
+        description: Variant to publish
+        required: false
+        type: choice
+        default: all
+        options:
+          - all
+          - minimal
+          - full
+      source_channel:
+        description: Source channel to publish
+        required: false
+        type: choice
+        default: all
+        options:
+          - all
+          - release
+          - master
+      ffmpeg_ref:
+        description: Explicit FFmpeg ref
+        required: false
+        type: string
+        default: ''
+      allow_prerelease:
+        description: Allow prerelease GPAC releases
+        required: false
+        type: boolean
+        default: false
+      force_rebuild:
+        description: Publish even if the resolved source release already exists
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    uses: ./.github/workflows/build.yml
+    with:
+      target: ${{ inputs.target }}
+      variant: ${{ inputs.variant }}
+      source_channel: ${{ inputs.source_channel }}
+      ffmpeg_ref: ${{ inputs.ffmpeg_ref }}
+      allow_prerelease: ${{ inputs.allow_prerelease }}
+  publish:
+    name: Publish stable and development releases
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          path: release-assets
+          pattern: mp4box-*
+          merge-multiple: true
+      - id: assets
+        env:
+          RELEASE_VERSION: ${{ needs.build.outputs.release_version }}
+          MASTER_SHORT_COMMIT: ${{ needs.build.outputs.master_short_commit }}
+        run: |
+          mkdir -p publish/release publish/master
+          find release-assets -type f -name '*-release-*' -exec cp {} publish/release/ \;
+          find release-assets -type f -name '*-master-*' -exec cp {} publish/master/ \;
+          if find publish/release -type f -print -quit | grep -q .; then
+            (cd publish/release && sha256sum * > checksums.sha256)
+            echo "stable_tag=gpac-${RELEASE_VERSION}" >> "$GITHUB_OUTPUT"
+            echo "stable_present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "stable_present=false" >> "$GITHUB_OUTPUT"
+          fi
+          if find publish/master -type f -print -quit | grep -q .; then
+            (cd publish/master && sha256sum * > checksums.sha256)
+            echo "master_tag=master-${MASTER_SHORT_COMMIT}" >> "$GITHUB_OUTPUT"
+            echo "master_present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "master_present=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Publish immutable stable release
+        if: steps.assets.outputs.stable_present == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.assets.outputs.stable_tag }}
+        run: |
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            exit 0
+          fi
+          gh release create "$RELEASE_TAG" publish/release/* --title "MP4Box ${RELEASE_TAG#gpac-}" --generate-notes --latest
+      - name: Publish master prerelease
+        if: steps.assets.outputs.master_present == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FORCE_REBUILD: ${{ inputs.force_rebuild && '1' || '0' }}
+          RELEASE_TAG: ${{ steps.assets.outputs.master_tag }}
+        run: |
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            if [ "$FORCE_REBUILD" = '1' ]; then
+              gh release upload "$RELEASE_TAG" publish/master/* --clobber
+            fi
+            exit 0
+          fi
+          gh release create "$RELEASE_TAG" publish/master/* --title "MP4Box development ${RELEASE_TAG#master-}" --prerelease --generate-notes
+      - name: Write release summary
+        if: always()
+        env:
+          STABLE_TAG: ${{ steps.assets.outputs.stable_tag }}
+          MASTER_TAG: ${{ steps.assets.outputs.master_tag }}
+          STABLE_PRESENT: ${{ steps.assets.outputs.stable_present }}
+          MASTER_PRESENT: ${{ steps.assets.outputs.master_present }}
+        run: |
+          {
+            echo '## Release summary'
+            echo
+            echo "- Stable assets: ${STABLE_PRESENT} (${STABLE_TAG})"
+            echo "- Development assets: ${MASTER_PRESENT} (${MASTER_TAG})"
+          } >> "$GITHUB_STEP_SUMMARY"

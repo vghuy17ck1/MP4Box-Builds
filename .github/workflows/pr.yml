@@ -1,0 +1,49 @@
+name: Pull request
+
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      full_matrix:
+        description: Build all targets, variants, and source channels
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint workflow and shell files
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - run: sudo apt-get update
+      - run: sudo apt-get install --yes shellcheck
+      - run: find . -type f -name '*.sh' -print0 | xargs -0 -r shellcheck --severity=warning
+      - run: ruby -e "require 'yaml'; ARGV.each { |path| YAML.load_file(path) }" .github/dependabot.yml .github/workflows/build.yml .github/workflows/pr.yml .github/workflows/release.yml .github/workflows/scheduled.yml
+  linux64_minimal_release:
+    if: github.event_name != 'workflow_dispatch' || !inputs.full_matrix
+    needs: lint
+    uses: ./.github/workflows/build.yml
+    with:
+      target: linux64
+      variant: minimal
+      source_channel: release
+  linux64_minimal_master:
+    if: github.event_name != 'workflow_dispatch' || !inputs.full_matrix
+    needs: lint
+    uses: ./.github/workflows/build.yml
+    with:
+      target: linux64
+      variant: minimal
+      source_channel: master
+  full_matrix:
+    if: github.event_name == 'workflow_dispatch' && inputs.full_matrix
+    needs: lint
+    uses: ./.github/workflows/build.yml
+    with:
+      target: all
+      variant: all
+      source_channel: all
