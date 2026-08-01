@@ -190,7 +190,7 @@ jobs:
           echo "artifact_dir=$artifact_dir" >> "$GITHUB_OUTPUT"
           echo "cache_key=$cache_key" >> "$GITHUB_OUTPUT"
           echo "artifact_name=mp4box-${BUILD_CHANNEL}-${TARGET}-${VARIANT}" >> "$GITHUB_OUTPUT"
-      - uses: actions/cache/restore@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: |
             .cache
