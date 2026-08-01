@@ -1,0 +1,6 @@
+diff --git a/configure b/configure
+--- a/configure
++++ b/configure
+@@ -66 +66 @@
+-windres="windres"
++windres="${WINDRES:-windres}"

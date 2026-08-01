@@ -1,0 +1,6 @@
+diff --git a/src/utils/os_divers.c b/src/utils/os_divers.c
+--- a/src/utils/os_divers.c
++++ b/src/utils/os_divers.c
+@@ -342 +342 @@
+-#include <WinSock2.h>
++#include <winsock2.h>

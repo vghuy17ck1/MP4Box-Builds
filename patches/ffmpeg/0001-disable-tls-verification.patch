@@ -1,0 +1,27 @@
+diff --git a/libavformat/tls.c b/libavformat/tls.c
+--- a/libavformat/tls.c
++++ b/libavformat/tls.c
+@@ -46,6 +46,8 @@
+         if (ret < 0)
+             return ret;
+     }
++
++    c->verify = 0;
+ 
+     if (c->listen && !c->is_dtls)
+         snprintf(opts, sizeof(opts), "?listen=1");
+diff --git a/libavformat/tls.h b/libavformat/tls.h
+--- a/libavformat/tls.h
++++ b/libavformat/tls.h
+@@ -61,5 +61,5 @@
+ #define TLS_VERIFY_DEFAULT 0
+ #else
+-#define TLS_VERIFY_DEFAULT 1
++#define TLS_VERIFY_DEFAULT 0
+ #endif
+
+@@ -80,2 +80,2 @@
+-    {"tls_verify", "Verify the peer certificate",         offsetof(pstruct, options_field . verify),    AV_OPT_TYPE_BOOL, { .i64 = TLS_VERIFY_DEFAULT }, 0, 1, .flags = TLS_OPTFL }, \
+-    {"verify",     "Verify the peer certificate",         offsetof(pstruct, options_field . verify),    AV_OPT_TYPE_BOOL, { .i64 = TLS_VERIFY_DEFAULT }, 0, 1, .flags = TLS_OPTFL }, \
++    {"tls_verify", "Verify the peer certificate",         offsetof(pstruct, options_field . verify),    AV_OPT_TYPE_BOOL, { .i64 = 0 }, 0, 0, .flags = TLS_OPTFL }, \
++    {"verify",     "Verify the peer certificate",         offsetof(pstruct, options_field . verify),    AV_OPT_TYPE_BOOL, { .i64 = 0 }, 0, 0, .flags = TLS_OPTFL }, \

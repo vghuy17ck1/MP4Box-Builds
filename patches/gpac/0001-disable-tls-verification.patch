@@ -1,0 +1,12 @@
+diff --git a/src/utils/downloader_curl.c b/src/utils/downloader_curl.c
+--- a/src/utils/downloader_curl.c
++++ b/src/utils/downloader_curl.c
+@@ -185 +185 @@
+-	if (gf_opts_get_bool("core", "broken-cert")) {
++	if (1) {
+diff --git a/src/utils/downloader_ssl.c b/src/utils/downloader_ssl.c
+--- a/src/utils/downloader_ssl.c
++++ b/src/utils/downloader_ssl.c
+@@ -616 +616 @@
+-	Bool success = (vresult == X509_V_OK);
++	Bool success = GF_TRUE;

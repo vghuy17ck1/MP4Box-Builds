@@ -1,0 +1,8 @@
+work/
+artifacts/
+cache/
+logs/
+*.tar.xz
+*.zip
+tests/fixtures/sample.mkv
+.DS_Store

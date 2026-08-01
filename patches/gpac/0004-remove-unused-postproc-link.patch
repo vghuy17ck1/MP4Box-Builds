@@ -1,0 +1,6 @@
+diff --git a/configure b/configure
+--- a/configure
++++ b/configure
+@@ -1607 +1607 @@
+-ffmpeg_lflags="-lz -lavcodec -lavformat -lavutil -lswscale -lpostproc"
++ffmpeg_lflags="-lz -lavcodec -lavformat -lavutil -lswscale"
