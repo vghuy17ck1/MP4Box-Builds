@@ -10,6 +10,9 @@ export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
 export PKG_CONFIG_SYSROOT_DIR="${PKG_CONFIG_SYSROOT_DIR:-/}"
 
 output="$(pkg-config "$@")"
+if [[ "${TARGET_OS:-}" == mingw32 ]]; then
+    output="$(printf '%s\n' "$output" | sed -E 's#(^| )-Wl,-rpath-link(=|,)[^ ]+##g; s#(^| )-rpath-link(=|,)[^ ]+##g; s/[[:space:]]+/ /g; s/^ | $//g')"
+fi
 case "$output" in
     *"/usr/lib"*|*"/usr/local/lib"*|*"/opt/homebrew"*|*"/Library/"*)
         printf 'host path leaked through pkg-config: %s\n' "$output" >&2
@@ -18,4 +21,3 @@ case "$output" in
 esac
 printf '%s\t%s\n' "$(date -u +%s)" "$*" >> "$log_file"
 printf '%s\n' "$output"
-
