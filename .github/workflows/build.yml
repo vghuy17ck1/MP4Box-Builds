@@ -118,7 +118,7 @@ jobs:
       master_ffmpeg_commit: ${{ steps.master.outputs.ffmpeg_commit }}
       master_ffmpeg_short_commit: ${{ steps.master.outputs.ffmpeg_short_commit }}
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - id: release
         env:
           SOURCE_CHANNEL: release
@@ -178,7 +178,7 @@ jobs:
       FFMPEG_REQUESTED_REF: ${{ matrix.channel == 'release' && needs.resolve.outputs.release_ffmpeg_requested_ref || needs.resolve.outputs.master_ffmpeg_requested_ref }}
       FFMPEG_RESOLVED_REF: ${{ matrix.channel == 'release' && needs.resolve.outputs.release_ffmpeg_resolved_ref || needs.resolve.outputs.master_ffmpeg_resolved_ref }}
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - id: prepare
         env:
           TARGET: ${{ matrix.target }}
