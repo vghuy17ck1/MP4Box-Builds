@@ -1,15 +1,9 @@
 diff --git a/configure b/configure
 --- a/configure
 +++ b/configure
-@@ -68,7 +68,7 @@
- strip="strip"
- fi
-
+@@ -71 +71 @@
 -pkg_config="pkg-config"
 +pkg_config="${PKG_CONFIG:-pkg-config}"
- windres="windres"
- readelf="readelf"
- install="${INSTALL:=install}"
 @@ -902,7 +902,7 @@
  fi
 
