@@ -11,6 +11,7 @@ apply_gpac_patches() {
         "$ROOT_DIR/patches/gpac/0003-use-configured-windres.patch"
         "$ROOT_DIR/patches/gpac/0004-remove-unused-postproc-link.patch"
         "$ROOT_DIR/patches/gpac/0005-use-static-pkg-config-for-cross.patch"
+        "$ROOT_DIR/patches/gpac/0006-remove-windows-rpath-link.patch"
     )
     [[ -f "$source_dir/src/utils/downloader_ssl.c" && -f "$source_dir/src/utils/downloader_curl.c" ]] || die "GPAC downloader sources missing"
     sed -i 's/\r$//' "$source_dir/src/utils/downloader_ssl.c" "$source_dir/src/utils/downloader_curl.c"
@@ -55,7 +56,11 @@ build_gpac() {
     if [[ -n "$gpac_cross_prefix" && "$gpac_ranlib" == "$gpac_cross_prefix"* ]]; then gpac_ranlib="${gpac_ranlib#$gpac_cross_prefix}"; fi
     if [[ -n "$gpac_cross_prefix" && "$gpac_strip" == "$gpac_cross_prefix"* ]]; then gpac_strip="${gpac_strip#$gpac_cross_prefix}"; fi
     if [[ -n "$gpac_cross_prefix" && "$gpac_windres" == "$gpac_cross_prefix"* ]]; then gpac_windres="${gpac_windres#$gpac_cross_prefix}"; fi
-    local -a args=(--prefix="$prefix" --static-build --static-modules --enable-fin --enable-fout --enable-dasher --use-zlib="$prefix" --use-ffmpeg=system --cc="$gpac_cc" --cxx="$gpac_cxx" --extra-cflags="-I$prefix/include $CFLAGS" --extra-ldflags="-L$prefix/lib $LDFLAGS" --target-os="$TARGET_OS" --cpu="$TARGET_ARCH")
+    local gpac_extra_cflags="-I$prefix/include $CFLAGS"
+    if [[ "$TARGET_OS" == mingw32 ]]; then
+        gpac_extra_cflags+=" -DGPAC_ALLOW_UNSAFE_STRFUNC"
+    fi
+    local -a args=(--prefix="$prefix" --static-build --static-modules --enable-fin --enable-fout --enable-dasher --use-zlib="$prefix" --use-ffmpeg=system --cc="$gpac_cc" --cxx="$gpac_cxx" --extra-cflags="$gpac_extra_cflags" --extra-ldflags="-L$prefix/lib $LDFLAGS" --target-os="$TARGET_OS" --cpu="$TARGET_ARCH")
     if [[ -n "$gpac_cross_prefix" ]] && gpac_has_option "$help_file" --cross-prefix; then
         args+=(--cross-prefix="$gpac_cross_prefix")
     fi

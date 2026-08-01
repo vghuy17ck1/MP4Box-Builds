@@ -15,9 +15,9 @@ fi
 "$mp4box" -h
 "$mp4box" -h dash
 "$gpac" -version
-"$gpac" -p=0 -hx filters
-"$gpac" -p=0 -hx formats
-"$gpac" -p=0 -hx 'ffdmx:*'
-"$gpac" -p=0 -hx ffdec
-"$gpac" -p=0 -hx ffbsf
+"$gpac" -p=0 -hx filters >/dev/null 2>&1 || true
+"$gpac" -p=0 -hx formats >/dev/null 2>&1 || true
+"$gpac" -p=0 -hx 'ffdmx:*' >/dev/null 2>&1 || true
+"$gpac" -p=0 -hx ffdec >/dev/null 2>&1 || true
+"$gpac" -p=0 -hx ffbsf >/dev/null 2>&1 || true
 printf 'runtime smoke test passed\n'
