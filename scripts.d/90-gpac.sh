@@ -66,7 +66,6 @@ build_gpac() {
     local -a linkage_args=()
     [[ "${LINKAGE:-static}" == static ]] && linkage_args=(--static-build --static-modules)
     local ffmpeg_option="--use-ffmpeg=system"
-    [[ "${LINKAGE:-static}" == shared ]] && ffmpeg_option="--use-ffmpeg=$prefix"
     local -a args=(--prefix="$prefix" "${linkage_args[@]}" --enable-fin --enable-fout --enable-dasher --use-zlib="$prefix" "$ffmpeg_option" --cc="$gpac_cc" --cxx="$gpac_cxx" --extra-cflags="$gpac_extra_cflags" --extra-ldflags="-L$prefix/lib $LDFLAGS" --target-os="$TARGET_OS" --cpu="$TARGET_ARCH")
     if [[ -n "$gpac_cross_prefix" ]] && gpac_has_option "$help_file" --cross-prefix; then
         args+=(--cross-prefix="$gpac_cross_prefix")
