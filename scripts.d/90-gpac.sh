@@ -10,6 +10,7 @@ apply_gpac_patches() {
         "$ROOT_DIR/patches/gpac/0002-case-correct-winsock-header.patch"
         "$ROOT_DIR/patches/gpac/0003-use-configured-windres.patch"
         "$ROOT_DIR/patches/gpac/0004-remove-unused-postproc-link.patch"
+        "$ROOT_DIR/patches/gpac/0005-use-static-pkg-config-for-cross.patch"
     )
     [[ -f "$source_dir/src/utils/downloader_ssl.c" && -f "$source_dir/src/utils/downloader_curl.c" ]] || die "GPAC downloader sources missing"
     sed -i 's/\r$//' "$source_dir/src/utils/downloader_ssl.c" "$source_dir/src/utils/downloader_curl.c"
@@ -54,7 +55,7 @@ build_gpac() {
     if [[ -n "$gpac_cross_prefix" && "$gpac_ranlib" == "$gpac_cross_prefix"* ]]; then gpac_ranlib="${gpac_ranlib#$gpac_cross_prefix}"; fi
     if [[ -n "$gpac_cross_prefix" && "$gpac_strip" == "$gpac_cross_prefix"* ]]; then gpac_strip="${gpac_strip#$gpac_cross_prefix}"; fi
     if [[ -n "$gpac_cross_prefix" && "$gpac_windres" == "$gpac_cross_prefix"* ]]; then gpac_windres="${gpac_windres#$gpac_cross_prefix}"; fi
-    local -a args=(--prefix="$prefix" --static-build --static-modules --enable-fin --enable-fout --enable-dasher --use-zlib="$prefix" --use-ffmpeg="$prefix" --cc="$gpac_cc" --cxx="$gpac_cxx" --extra-cflags="-I$prefix/include $CFLAGS" --extra-ldflags="-L$prefix/lib $LDFLAGS" --target-os="$TARGET_OS" --cpu="$TARGET_ARCH")
+    local -a args=(--prefix="$prefix" --static-build --static-modules --enable-fin --enable-fout --enable-dasher --use-zlib="$prefix" --use-ffmpeg=system --cc="$gpac_cc" --cxx="$gpac_cxx" --extra-cflags="-I$prefix/include $CFLAGS" --extra-ldflags="-L$prefix/lib $LDFLAGS" --target-os="$TARGET_OS" --cpu="$TARGET_ARCH")
     if [[ -n "$gpac_cross_prefix" ]] && gpac_has_option "$help_file" --cross-prefix; then
         args+=(--cross-prefix="$gpac_cross_prefix")
     fi
@@ -69,6 +70,9 @@ build_gpac() {
         ./configure "${args[@]}"
     ) >"$BUILD_LOG_DIR/gpac-configure.log" 2>&1 || { cat "$source_dir/config.log" >&2 || true; cat "$BUILD_LOG_DIR/gpac-configure.log" >&2; return 1; }
     if grep -Eiq '^FFmpeg: (no|force-no)' "$BUILD_LOG_DIR/gpac-configure.log"; then
+        if [[ -f "$source_dir/config.log" ]]; then
+            grep -Eiq 'ffmpeg|libav|pkg-config|cannot|error|failed' "$source_dir/config.log" >&2 || true
+        fi
         cat "$BUILD_LOG_DIR/gpac-configure.log" >&2
         die "GPAC was configured without FFmpeg support"
     fi

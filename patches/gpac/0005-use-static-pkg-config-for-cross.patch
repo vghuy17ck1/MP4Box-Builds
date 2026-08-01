@@ -1,0 +1,9 @@
+diff --git a/configure b/configure
+--- a/configure
++++ b/configure
+@@ -65 +65 @@
+-pkg_config="pkg-config"
++pkg_config="${PKG_CONFIG:-pkg-config}"
+@@ -1348 +1348 @@
+-        if test "$cross_prefix" = "" -a "$is_port" != "yes" -a "$pkg_config" != "no" -a "$pkg_cfg_name" != ""; then
++        if test "$is_port" != "yes" -a "$pkg_config" != "no" -a "$pkg_cfg_name" != ""; then

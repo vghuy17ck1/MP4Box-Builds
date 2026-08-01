@@ -79,7 +79,7 @@ chmod u+rx "$staging/bin/MP4Box$suffix" "$staging/bin/gpac$suffix"
 printf 'MP4Box-Builds %s %s %s\n' "$target" "$variant" "$channel" >"$staging/README.txt"
 printf '%s\n' "Built from immutable GPAC commit $gpac_commit and FFmpeg commit $ffmpeg_commit." >>"$staging/README.txt"
 printf '%s\n' "See BUILD_INFO.json and FEATURES.json for verification status." >>"$staging/README.txt"
-printf '%s\n' "--static-build --static-modules --use-ffmpeg=$PREFIX" >"$BUILD_ROOT/configure-arguments.txt"
+printf '%s\n' "--static-build --static-modules --use-ffmpeg=system" >"$BUILD_ROOT/configure-arguments.txt"
 if [[ "$target" == linux64 ]] && command -v ffmpeg >/dev/null 2>&1; then
     bash "$ROOT_DIR/tests/fixtures/create-sample.sh" "$ROOT_DIR/tests/fixtures/sample.mkv"
 fi
