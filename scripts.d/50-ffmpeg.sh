@@ -16,7 +16,9 @@ apply_ffmpeg_patches() {
 build_ffmpeg() {
     local source_dir="$1" prefix="$2" variant="$3"
     apply_ffmpeg_patches "$source_dir"
-    local -a args=(--prefix="$prefix" --disable-shared --enable-static --enable-pic --pkg-config="$PKG_CONFIG" --extra-cflags="-I$prefix/include $CFLAGS" --extra-ldflags="-L$prefix/lib $LDFLAGS" "${FFMPEG_CONFIGURE_ARGS[@]}")
+    local -a linkage_args=(--disable-shared --enable-static)
+    [[ "${LINKAGE:-static}" == shared ]] && linkage_args=(--enable-shared --disable-static)
+    local -a args=(--prefix="$prefix" "${linkage_args[@]}" --enable-pic --pkg-config="$PKG_CONFIG" --extra-cflags="-I$prefix/include $CFLAGS" --extra-ldflags="-L$prefix/lib $LDFLAGS" "${FFMPEG_CONFIGURE_ARGS[@]}")
     args+=(--arch="$TARGET_ARCH" --target-os="$TARGET_OS")
     args+=(--cc="$CC" --cxx="$CXX" --ar="$AR" --as="$AS" --ld="$CC" --ranlib="$RANLIB" --strip="$STRIP" --nm="$NM")
     [[ "$TARGET_OS" == mingw32 || "$TARGET_ARCH" == aarch64 ]] && args+=(--enable-cross-compile --cross-prefix="$CROSS_COMPILE")
@@ -27,8 +29,25 @@ build_ffmpeg() {
     [[ "$TARGET_OS" == mingw32 ]] && make_args+=(WINDRES="$WINDRES")
     make -C "$source_dir" -j"${JOBS:-2}" "${make_args[@]}" >"$BUILD_LOG_DIR/ffmpeg-build.log" 2>&1 || { cat "$BUILD_LOG_DIR/ffmpeg-build.log" >&2; return 1; }
     make -C "$source_dir" install >"$BUILD_LOG_DIR/ffmpeg-install.log" 2>&1 || { cat "$BUILD_LOG_DIR/ffmpeg-install.log" >&2; return 1; }
-    for library in avformat avcodec avutil swresample swscale; do
-        [[ -f "$prefix/lib/lib$library.a" ]] || die "FFmpeg library missing: lib$library.a"
-    done
-    [[ "$variant" == minimal || -f "$prefix/lib/libavfilter.a" ]] || die "full FFmpeg library missing: libavfilter.a"
+    if [[ "${LINKAGE:-static}" == static ]]; then
+        for library in avformat avcodec avutil swresample swscale; do
+            [[ -f "$prefix/lib/lib$library.a" ]] || die "FFmpeg library missing: lib$library.a"
+        done
+        [[ "$variant" == minimal || -f "$prefix/lib/libavfilter.a" ]] || die "full FFmpeg library missing: libavfilter.a"
+    else
+        for library in avformat avcodec avutil swresample swscale; do
+            if [[ "$TARGET_OS" == mingw32 ]]; then
+                find "$prefix/lib" "$prefix/bin" -maxdepth 1 -type f \( -name "lib$library.dll.a" -o -iname "$library*.dll" -o -iname "lib$library*.dll" \) -print -quit | grep -q . || die "FFmpeg shared library missing: $library"
+            else
+                find "$prefix/lib" -maxdepth 1 -type f -name "lib$library.so*" -print -quit | grep -q . || die "FFmpeg shared library missing: lib$library.so"
+            fi
+        done
+        if [[ "$variant" != minimal ]]; then
+            if [[ "$TARGET_OS" == mingw32 ]]; then
+                find "$prefix/lib" "$prefix/bin" -maxdepth 1 -type f \( -name 'libavfilter.dll.a' -o -iname 'avfilter*.dll' -o -iname 'libavfilter*.dll' \) -print -quit | grep -q . || die "full FFmpeg shared library missing: avfilter"
+            else
+                find "$prefix/lib" -maxdepth 1 -type f -name 'libavfilter.so*' -print -quit | grep -q . || die "full FFmpeg shared library missing: libavfilter.so"
+            fi
+        fi
+    fi
 }

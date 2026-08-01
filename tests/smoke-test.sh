@@ -7,6 +7,7 @@ suffix=""
 [[ "$target" == win64 || "$target" == winarm64 ]] && suffix=.exe
 mp4box="$artifact_dir/bin/MP4Box$suffix"
 gpac="$artifact_dir/bin/gpac$suffix"
+if [[ -d "$artifact_dir/lib" ]]; then export LD_LIBRARY_PATH="$artifact_dir/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"; fi
 if [[ "$target" != linux64 ]]; then
     printf 'runtime smoke test not executed for non-native target %s\n' "$target"
     exit 0

@@ -42,8 +42,10 @@ build_gpac() {
     apply_gpac_patches "$source_dir"
     local help_file="$BUILD_LOG_DIR/gpac-configure-help.txt"
 (cd "$source_dir" && ./configure --help) >"$help_file" 2>&1 || true
-    gpac_has_option "$help_file" --static-build || die "selected GPAC source does not support --static-build"
-    gpac_has_option "$help_file" --static-modules || die "selected GPAC source does not support --static-modules"
+    if [[ "${LINKAGE:-static}" == static ]]; then
+        gpac_has_option "$help_file" --static-build || die "selected GPAC source does not support --static-build"
+        gpac_has_option "$help_file" --static-modules || die "selected GPAC source does not support --static-modules"
+    fi
     gpac_supports_ffmpeg "$help_file" || die "selected GPAC source does not support FFmpeg configuration"
     local gpac_cross_prefix=""
     local gpac_cc="$CC" gpac_cxx="$CXX" gpac_ar="$AR" gpac_ranlib="$RANLIB" gpac_strip="$STRIP" gpac_windres="${WINDRES:-windres}"
@@ -60,7 +62,9 @@ build_gpac() {
     if [[ "$TARGET_OS" == mingw32 ]]; then
         gpac_extra_cflags+=" -DGPAC_ALLOW_UNSAFE_STRFUNC"
     fi
-    local -a args=(--prefix="$prefix" --static-build --static-modules --enable-fin --enable-fout --enable-dasher --use-zlib="$prefix" --use-ffmpeg=system --cc="$gpac_cc" --cxx="$gpac_cxx" --extra-cflags="$gpac_extra_cflags" --extra-ldflags="-L$prefix/lib $LDFLAGS" --target-os="$TARGET_OS" --cpu="$TARGET_ARCH")
+    local -a linkage_args=()
+    [[ "${LINKAGE:-static}" == static ]] && linkage_args=(--static-build --static-modules)
+    local -a args=(--prefix="$prefix" "${linkage_args[@]}" --enable-fin --enable-fout --enable-dasher --use-zlib="$prefix" --use-ffmpeg=system --cc="$gpac_cc" --cxx="$gpac_cxx" --extra-cflags="$gpac_extra_cflags" --extra-ldflags="-L$prefix/lib $LDFLAGS" --target-os="$TARGET_OS" --cpu="$TARGET_ARCH")
     if [[ -n "$gpac_cross_prefix" ]] && gpac_has_option "$help_file" --cross-prefix; then
         args+=(--cross-prefix="$gpac_cross_prefix")
     fi

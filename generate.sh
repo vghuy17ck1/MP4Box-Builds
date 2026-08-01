@@ -11,7 +11,7 @@ import json
 import pathlib
 import sys
 targets = ["linux64", "linuxarm64", "win64", "winarm64"]
-variants = ["minimal", "full"]
+variants = ["minimal", "full", "shared-minimal", "shared-full"]
 channels = ["release", "master"]
 path = pathlib.Path(sys.argv[1])
 matrix = [{"target": t, "variant": v, "channel": c} for c in channels for t in targets for v in variants]

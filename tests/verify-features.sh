@@ -16,7 +16,7 @@ required = ("matroska_support", "webm_support", "dash_support", "cmaf_support")
 missing = [key for key in required if data.get(key) is False]
 if missing and data.get("feature_detection") != "unavailable":
     raise SystemExit("missing required detected features: " + ", ".join(missing))
-if variant == "full" and data.get("feature_detection") != "unavailable" and not data.get("ffmpeg_encoders"):
+if variant in ("full", "shared-full") and data.get("feature_detection") != "unavailable" and not data.get("ffmpeg_encoders"):
     raise SystemExit("full feature manifest has no FFmpeg encoders")
 print("feature manifest is valid")
 PY

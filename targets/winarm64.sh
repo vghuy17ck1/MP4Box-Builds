@@ -11,6 +11,8 @@ target_setup() {
     export WINDRES="${TARGET_WINDRES:-${prefix}windres}"
     export CFLAGS="${CFLAGS:--O2 -ffile-prefix-map=$ROOT_DIR=/usr/src/mp4box-builds}"
     export CXXFLAGS="${CXXFLAGS:-$CFLAGS}"
-    export LDFLAGS="${LDFLAGS:--static}"
+    local default_ldflags='-static'
+    [[ "${LINKAGE:-static}" == shared ]] && default_ldflags=''
+    export LDFLAGS="${LDFLAGS:-$default_ldflags}"
     export CROSS_COMPILE="$prefix"
 }

@@ -7,4 +7,3 @@ build_codec_dependencies() {
     export FFMPEG_EXTERNAL_CFLAGS="-I$TARGET_PREFIX/include"
     export FFMPEG_EXTERNAL_LDFLAGS="-L$TARGET_PREFIX/lib"
 }
-

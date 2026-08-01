@@ -2,7 +2,11 @@
 set -euo pipefail
 
 variant_setup() {
-    export VARIANT=full EFFECTIVE_LICENSE=GPL-2.1-or-later
+    full_variant_setup
+    export VARIANT=full BASE_VARIANT=full LINKAGE=static EFFECTIVE_LICENSE=GPL-2.1-or-later
+}
+
+full_variant_setup() {
     export FFMPEG_LIBRARIES="avformat avcodec avutil swresample swscale avfilter"
     export FFMPEG_CONFIGURE_ARGS=(
         --disable-programs

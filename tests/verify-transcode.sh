@@ -10,6 +10,7 @@ fi
 fixture="${MP4BOX_MKV_FIXTURE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/fixtures" && pwd)/sample.mkv}"
 [[ -f "$fixture" ]] || { printf 'missing MKV fixture: %s\n' "$fixture" >&2; exit 1; }
 gpac="$artifact_dir/bin/gpac"
+if [[ -d "$artifact_dir/lib" ]]; then export LD_LIBRARY_PATH="$artifact_dir/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"; fi
 output_dir="$(mktemp -d)"
 trap 'rm -rf "$output_dir"' EXIT
 "$gpac" -i "$fixture" -o "$output_dir/transcoded.mp4:encoder=mpeg4"

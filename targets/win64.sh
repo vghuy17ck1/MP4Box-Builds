@@ -11,6 +11,8 @@ target_setup() {
     export WINDRES="${TARGET_WINDRES:-${prefix}windres}"
     export CFLAGS="${CFLAGS:--O2 -ffile-prefix-map=$ROOT_DIR=/usr/src/mp4box-builds -Wno-pointer-sign -Wno-error=pointer-sign}"
     export CXXFLAGS="${CXXFLAGS:-$CFLAGS}"
-    export LDFLAGS="${LDFLAGS:--static -static-libgcc -static-libstdc++}"
+    local default_ldflags='-static -static-libgcc -static-libstdc++'
+    [[ "${LINKAGE:-static}" == shared ]] && default_ldflags='-static-libgcc -static-libstdc++'
+    export LDFLAGS="${LDFLAGS:-$default_ldflags}"
     export CROSS_COMPILE="$prefix"
 }

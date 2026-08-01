@@ -4,7 +4,11 @@ set -euo pipefail
 prefix="${TARGET_PREFIX:?TARGET_PREFIX must be set}"
 log_file="${PKG_CONFIG_STATIC_LOG:-$prefix/pkg-config-requests.log}"
 mkdir -p "$(dirname "$log_file")"
-export PKG_CONFIG_ALL_STATIC=1
+if [[ "${PKG_CONFIG_LINKAGE:-static}" == shared ]]; then
+    unset PKG_CONFIG_ALL_STATIC
+else
+    export PKG_CONFIG_ALL_STATIC=1
+fi
 export PKG_CONFIG_LIBDIR="$prefix/lib/pkgconfig:$prefix/share/pkgconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_LIBDIR"
 export PKG_CONFIG_SYSROOT_DIR="${PKG_CONFIG_SYSROOT_DIR:-/}"

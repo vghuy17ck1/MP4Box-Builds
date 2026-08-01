@@ -64,6 +64,8 @@ on:
           - all
           - minimal
           - full
+          - shared-minimal
+          - shared-full
       source_channel:
         description: GPAC source channel to build
         required: false
@@ -157,7 +159,7 @@ jobs:
           import os
 
           targets = ["linux64", "linuxarm64", "win64", "winarm64"]
-          variants = ["minimal", "full"]
+          variants = ["minimal", "full", "shared-minimal", "shared-full"]
           channels = ["release", "master"]
           target = os.environ.get("INPUT_TARGET", "all")
           variant = os.environ.get("INPUT_VARIANT", "all")
@@ -248,7 +250,7 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update
-          sudo apt-get install --yes build-essential ca-certificates cmake curl file git jq make nasm perl pkg-config python3 unzip zip xz-utils
+          sudo apt-get install --yes build-essential ca-certificates cmake curl file git jq make nasm patchelf perl pkg-config python3 unzip zip xz-utils
           case "$TARGET" in
             linux64)
               sudo apt-get install --yes musl-tools
@@ -300,12 +302,13 @@ jobs:
           VARIANT: ${{ matrix.variant }}
           SOURCE_CHANNEL: ${{ inputs.gpac_ref != '' && 'custom' || matrix.channel }}
         run: bash ./build.sh "$TARGET" "$VARIANT" "$SOURCE_CHANNEL"
-      - id: static
-        name: Verify static linkage and target format
+      - id: linkage
+        name: Verify linkage and target format
         env:
           ARTIFACT_DIR: ${{ steps.prepare.outputs.artifact_dir }}
           TARGET: ${{ matrix.target }}
-        run: bash ./tests/verify-static.sh "$ARTIFACT_DIR" "$TARGET"
+          VARIANT: ${{ matrix.variant }}
+        run: bash ./tests/verify-linkage.sh "$ARTIFACT_DIR" "$TARGET" "$VARIANT"
       - id: features
         name: Verify detected features
         env:
@@ -326,7 +329,7 @@ jobs:
         run: bash ./tests/verify-dash-mkv.sh "$ARTIFACT_DIR"
       - id: transcode
         name: Run native transcoding test
-        if: matrix.target == 'linux64' && matrix.variant == 'full'
+        if: matrix.target == 'linux64' && (matrix.variant == 'full' || matrix.variant == 'shared-full')
         env:
           ARTIFACT_DIR: ${{ steps.prepare.outputs.artifact_dir }}
         run: bash ./tests/verify-transcode.sh "$ARTIFACT_DIR"
@@ -344,7 +347,7 @@ jobs:
           ARTIFACT_DIR: ${{ steps.prepare.outputs.artifact_dir }}
           TARGET: ${{ matrix.target }}
           VARIANT: ${{ matrix.variant }}
-          STATIC_STATUS: ${{ steps.static.outcome }}
+          LINKAGE_STATUS: ${{ steps.linkage.outcome }}
           FEATURE_STATUS: ${{ steps.features.outcome }}
           SMOKE_STATUS: ${{ steps.smoke.outcome }}
           DASH_STATUS: ${{ steps.dash.outcome }}
@@ -381,7 +384,7 @@ jobs:
             echo "- Toolchain: ${toolchain}"
             echo "- Effective license: ${effective_license}"
             echo "- Artifact: ${archive_name}"
-            echo "- Static verification: ${STATIC_STATUS}"
+            echo "- Linkage verification: ${LINKAGE_STATUS}"
             echo "- Feature verification: ${FEATURE_STATUS}"
             echo "- Runtime smoke test: ${SMOKE_STATUS}"
             echo "- MKV-to-DASH test: ${DASH_STATUS}"

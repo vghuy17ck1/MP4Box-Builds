@@ -8,6 +8,7 @@ configure_toolchain() {
     target_setup
     export TARGET_PREFIX="$prefix"
     export PKG_CONFIG="$ROOT_DIR/util/pkg-config-static"
+    export PKG_CONFIG_LINKAGE="${LINKAGE:-static}"
     export PKG_CONFIG_STATIC_LOG="$prefix/pkg-config-requests.log"
     export PKG_CONFIG_PATH="$prefix/lib/pkgconfig:$prefix/share/pkgconfig"
     export PKG_CONFIG_LIBDIR="$PKG_CONFIG_PATH"

@@ -29,8 +29,24 @@ valid_target() {
 
 valid_variant() {
     case "$1" in
-        minimal|full) return 0 ;;
+        minimal|full|shared-minimal|shared-full) return 0 ;;
         *) return 1 ;;
+    esac
+}
+
+variant_base() {
+    case "$1" in
+        minimal|shared-minimal) printf 'minimal\n' ;;
+        full|shared-full) printf 'full\n' ;;
+        *) die "unknown variant: $1" ;;
+    esac
+}
+
+variant_linkage() {
+    case "$1" in
+        minimal|full) printf 'static\n' ;;
+        shared-minimal|shared-full) printf 'shared\n' ;;
+        *) die "unknown variant: $1" ;;
     esac
 }
 

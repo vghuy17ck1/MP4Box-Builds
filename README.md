@@ -6,14 +6,14 @@ MP4Box-Builds builds portable GPAC command-line artifacts containing `MP4Box` an
 
 The build pipeline is:
 
-`util/resolve-refs.sh` -> immutable GPAC and FFmpeg commits -> target toolchain -> static FFmpeg -> static GPAC modules -> binary inspection -> feature detection -> deterministic archive.
+`util/resolve-refs.sh` -> immutable GPAC and FFmpeg commits -> target toolchain -> linkage-specific FFmpeg and GPAC -> binary inspection -> feature detection -> deterministic archive.
 
 The source resolver runs once before a CI matrix. Every matrix job receives the same release and master commits. GPAC master is never paired with a moving FFmpeg branch; FFmpeg defaults to the pinned `FFMPEG_REF` in `versions.env`.
 
 The repository is separated into:
 
 - `targets/`: target architecture, compiler, linker, and runtime settings.
-- `variants/`: minimal and full FFmpeg/GPAC feature policies.
+- `variants/`: minimal/full feature policies and static/shared linkage variants.
 - `scripts.d/`: dependency and upstream build stages.
 - `channels/`: release and master resolver entry points.
 - `util/`: reference resolution, static pkg-config, metadata, licensing, packaging, and prefix validation.
@@ -24,35 +24,35 @@ The repository is separated into:
 
 | Target | Architecture | Intended runtime |
 |---|---|---|
-| `linux64` | x86-64 | static Linux executable |
-| `linuxarm64` | AArch64 | static Linux executable |
-| `win64` | PE x86-64 | Windows system DLLs only |
-| `winarm64` | PE ARM64 | Windows system DLLs only |
+| `linux64` | x86-64 | static or bundled shared Linux executable |
+| `linuxarm64` | AArch64 | static or bundled shared Linux executable |
+| `win64` | PE x86-64 | system DLLs or bundled build DLLs |
+| `winarm64` | PE ARM64 | system DLLs or bundled build DLLs |
 
-Linux builds use static linker flags and reject ELF interpreters and `DT_NEEDED` entries. Windows builds reject GPAC, FFmpeg, OpenSSL, MinGW, libgcc, and libstdc++ runtime imports. `-march=native` and `-mcpu=native` are not used.
+Static Linux builds reject ELF interpreters and `DT_NEEDED` entries. Shared Linux builds bundle target libraries and use a relative runtime path. Static Windows builds reject GPAC, FFmpeg, OpenSSL, MinGW, libgcc, and libstdc++ runtime imports; shared Windows builds bundle their non-system DLLs. `-march=native` and `-mcpu=native` are not used.
 
 ## Variants
 
-| Feature | Minimal | Full |
-|---|---:|---:|
-| MP4Box and gpac | Yes | Yes |
-| Static GPAC modules | Yes | Yes |
-| FFmpeg libraries | Yes | Yes |
-| FFmpeg Matroska/WebM demuxer | Required | Required |
-| MKV-to-DASH packaging | Required | Required |
-| Essential FFmpeg decoders | Yes | Yes |
-| FFmpeg encoders | Limited | Broad policy |
-| FFmpeg AVFilter | No | Yes |
-| HTTPS and HTTP/2 | Optional | Optional dependency stage |
-| QuickJS | No | Yes where supported |
-| GUI playback | No | No |
-| Effective license | Detected | Detected; often GPL with external GPL codecs |
+| Feature | Minimal | Full | Shared minimal | Shared full |
+|---|---:|---:|---:|---:|
+| MP4Box and gpac | Yes | Yes | Yes | Yes |
+| GPAC modules | Static | Static | Shared | Shared |
+| FFmpeg libraries | Yes | Yes | Yes | Yes |
+| FFmpeg Matroska/WebM demuxer | Required | Required | Required | Required |
+| MKV-to-DASH packaging | Required | Required | Required | Required |
+| Essential FFmpeg decoders | Yes | Yes | Yes | Yes |
+| FFmpeg encoders | Limited | Broad policy | Limited | Broad policy |
+| FFmpeg AVFilter | No | Yes | No | Yes |
+| HTTPS and HTTP/2 | Optional | Optional dependency stage | Optional | Optional dependency stage |
+| QuickJS | No | Yes where supported | No | Yes where supported |
+| GUI playback | No | No | No | No |
+| Effective license | Detected | Detected; often GPL with external GPL codecs | Detected | Detected; often GPL with external GPL codecs |
 
-Both variants keep FFmpeg enabled. Minimal disables desktop-oriented GPAC components but does not use GPAC's unmodified `--static-bin` preset. That preset can disable FFmpeg and other required libraries. The build uses `--static-build --static-modules`, a target prefix, static-only pkg-config resolution, explicit linker flags, and final executable inspection.
+All variants keep FFmpeg enabled. Minimal disables desktop-oriented GPAC components. `minimal` and `full` use static FFmpeg and GPAC; `shared-minimal` and `shared-full` use shared FFmpeg and GPAC and package their target runtime libraries. Shared builds retain the same feature policy as their corresponding static variant.
 
 The initial full policy uses only redistributable components. External codec libraries are added only when their static target libraries have been built and verified; the effective license is never inferred from the variant name.
 
-TLS verification is disabled at compile time in both variants. FFmpeg ignores its `tls_verify` and `verify` settings before opening a TLS transport. GPAC bypasses certificate validation in its OpenSSL and libcurl download paths. `BUILD_INFO.json` records both source patches. This is intentionally insecure and should only be used with trusted transport networks or separately authenticated content.
+TLS verification is disabled at compile time in all variants. FFmpeg ignores its `tls_verify` and `verify` settings before opening a TLS transport. GPAC bypasses certificate validation in its OpenSSL and libcurl download paths. `BUILD_INFO.json` records both source patches. This is intentionally insecure and should only be used with trusted transport networks or separately authenticated content.
 
 ## Source channels
 
@@ -96,6 +96,8 @@ Build the other matrix dimensions:
 ./build.sh linuxarm64 minimal release
 ./build.sh win64 full release
 ./build.sh winarm64 full master
+./build.sh linux64 shared-minimal release
+./build.sh linux64 shared-full release
 ```
 
 Use overrides without changing repository files:
@@ -139,6 +141,8 @@ SHA256SUMS
 
 The output directory also receives an unpacked `bin/`, `BUILD_INFO.json`, and `FEATURES.json` for CI verification. These are staging conveniences and are not part of the archive's root outside the listed contents.
 
+Shared archives also contain bundled runtime libraries under `lib/` on Linux and bundled DLLs under `bin/` on Windows.
+
 ## Verification
 
 Native smoke tests run:
@@ -171,7 +175,7 @@ Run reproducibility verification:
 
 ## GitHub Actions
 
-- `build.yml` resolves both channels once and defines the 4 x 2 x 2 matrix; its Friday 22:00 UTC schedule publishes timestamped and `latest` autobuild releases, and manual dispatch can enable the same behavior with `publish_release`.
+- `build.yml` resolves both channels once and defines the 4 x 4 x 2 matrix; its Friday 22:00 UTC schedule publishes timestamped and `latest` autobuild releases, and manual dispatch can enable the same behavior with `publish_release`.
 - `pr.yml` lints shell/YAML, validates generated metadata, and runs a Linux minimal smoke path.
 - `release.yml` publishes immutable release-channel assets with checksums and never publishes master as stable latest.
 - `scheduled.yml` runs daily in UTC and publishes master artifacts as development prereleases.
@@ -181,7 +185,7 @@ Run reproducibility verification:
 
 ## Metadata and licensing
 
-`BUILD_INFO.json` records source repositories, requested and immutable refs, compiler/toolchain versions, configure arguments, patch state, license, source date epoch, and separate static, format, runtime, DASH, and transcoding statuses.
+`BUILD_INFO.json` records source repositories, requested and immutable refs, compiler/toolchain versions, linkage mode, configure arguments, patch state, license, source date epoch, and separate linkage, format, runtime, DASH, and transcoding statuses.
 
 `FEATURES.json` is generated from final binary help output when execution is available. For cross targets whose architecture cannot execute on the runner, it records `feature_detection: unavailable` rather than claiming that requested flags imply detected features.
 
