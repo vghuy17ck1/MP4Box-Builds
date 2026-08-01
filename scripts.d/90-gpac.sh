@@ -77,13 +77,15 @@ build_gpac() {
     done
     if [[ "${LINKAGE:-static}" == shared ]]; then
         local pkg_config_log="$BUILD_LOG_DIR/gpac-pkg-config.log"
+        local -a ffmpeg_pkg_names=(libavcodec libavformat libavutil libswscale)
+        [[ "$variant" == full ]] && ffmpeg_pkg_names+=(libavfilter)
         {
             printf 'PKG_CONFIG=%s\n' "${PKG_CONFIG:-pkg-config}"
             printf 'PKG_CONFIG_PATH=%s\n' "${PKG_CONFIG_PATH:-}"
             printf 'PKG_CONFIG_LIBDIR=%s\n' "${PKG_CONFIG_LIBDIR:-}"
             "${PKG_CONFIG:-pkg-config}" --version
-            "${PKG_CONFIG:-pkg-config}" --exists libavcodec libavformat libavutil libswscale
-            "${PKG_CONFIG:-pkg-config}" --cflags --libs libavcodec libavformat libavutil libswscale
+            "${PKG_CONFIG:-pkg-config}" --exists "${ffmpeg_pkg_names[@]}"
+            "${PKG_CONFIG:-pkg-config}" --cflags --libs "${ffmpeg_pkg_names[@]}"
         } >"$pkg_config_log" 2>&1 || { cat "$pkg_config_log" >&2; return 1; }
     fi
     (

@@ -9,3 +9,16 @@ diff --git a/applications/mp4box/Makefile b/applications/mp4box/Makefile
  else
  LINKFLAGS+= -Wl,-rpath,'$$ORIGIN' -Wl,-rpath,$(prefix)/lib -Wl,-rpath-link,../../bin/gcc
  endif
+
+diff --git a/applications/gpac/Makefile b/applications/gpac/Makefile
+--- a/applications/gpac/Makefile
++++ b/applications/gpac/Makefile
+@@ -57,7 +57,8 @@
+ LINKFLAGS+=-lgpac
+ ifeq ($(CONFIG_EMSCRIPTEN),yes)
+ else ifeq ($(CONFIG_DARWIN),yes)
+ #LINKFLAGS+= -Wl,-rpath,'@loader_path'
++else ifeq ($(CONFIG_WIN32),yes)
+ else
+ LINKFLAGS+= -Wl,-rpath,'$$ORIGIN' -Wl,-rpath,$(prefix)/lib -Wl,-rpath-link,../../bin/gcc
+ endif
