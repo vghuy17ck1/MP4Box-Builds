@@ -1,0 +1,16 @@
+diff --git a/applications/gpac/Makefile b/applications/gpac/Makefile
+--- a/applications/gpac/Makefile
++++ b/applications/gpac/Makefile
+@@ -57 +57,3 @@
+-LINKFLAGS+=-lgpac
++LINKFLAGS+=-lgpac $(GPAC_SH_FLAGS)
++LINKFLAGS+=$(zlib_ldflags) $(opensvc_ldflags) $(ssl_ldflags) $(jpeg_ldflags) $(openjpeg_ldflags) $(png_ldflags) $(mad_ldflags) $(a52_ldflags) $(xvid_ldflags) $(faad_ldflags)
++LINKFLAGS+=$(ffmpeg_ldflags) $(ogg_ldflags) $(vorbis_ldflags) $(theora_ldflags) $(nghttp2_ldflags) $(vtb_ldflags) $(caption_ldflags) $(mpeghdec_ldflags) $(curl_ldflags) $(EXTRALIBS)
+diff --git a/applications/mp4box/Makefile b/applications/mp4box/Makefile
+--- a/applications/mp4box/Makefile
++++ b/applications/mp4box/Makefile
+@@ -43 +43,3 @@
+-LINKFLAGS+=-lgpac
++LINKFLAGS+=-lgpac $(GPAC_SH_FLAGS)
++LINKFLAGS+=$(zlib_ldflags) $(opensvc_ldflags) $(ssl_ldflags) $(jpeg_ldflags) $(openjpeg_ldflags) $(png_ldflags) $(mad_ldflags) $(a52_ldflags) $(xvid_ldflags) $(faad_ldflags)
++LINKFLAGS+=$(ffmpeg_ldflags) $(ogg_ldflags) $(vorbis_ldflags) $(theora_ldflags) $(nghttp2_ldflags) $(vtb_ldflags) $(caption_ldflags) $(mpeghdec_ldflags) $(curl_ldflags) $(EXTRALIBS)

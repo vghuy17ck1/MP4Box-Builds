@@ -13,6 +13,7 @@ apply_gpac_patches() {
         "$ROOT_DIR/patches/gpac/0005-use-static-pkg-config-for-cross.patch"
         "$ROOT_DIR/patches/gpac/0006-remove-windows-rpath-link.patch"
         "$ROOT_DIR/patches/gpac/0007-remove-windows-shared-soname.patch"
+        "$ROOT_DIR/patches/gpac/0008-link-shared-gpac-dependencies.patch"
     )
     [[ -f "$source_dir/src/utils/downloader_ssl.c" && -f "$source_dir/src/utils/downloader_curl.c" ]] || die "GPAC downloader sources missing"
     sed -i 's/\r$//' "$source_dir/src/utils/downloader_ssl.c" "$source_dir/src/utils/downloader_curl.c"
