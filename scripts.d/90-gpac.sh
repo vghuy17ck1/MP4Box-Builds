@@ -60,6 +60,9 @@ build_gpac() {
     if [[ -n "$gpac_cross_prefix" && "$gpac_strip" == "$gpac_cross_prefix"* ]]; then gpac_strip="${gpac_strip#$gpac_cross_prefix}"; fi
     if [[ -n "$gpac_cross_prefix" && "$gpac_windres" == "$gpac_cross_prefix"* ]]; then gpac_windres="${gpac_windres#$gpac_cross_prefix}"; fi
     local gpac_extra_cflags="-I$prefix/include $CFLAGS"
+    if [[ "${LINKAGE:-static}" == shared && "$TARGET_OS" != mingw32 ]]; then
+        gpac_extra_cflags+=" -fPIC"
+    fi
     if [[ "$TARGET_OS" == mingw32 ]]; then
         gpac_extra_cflags+=" -DGPAC_ALLOW_UNSAFE_STRFUNC"
     fi
