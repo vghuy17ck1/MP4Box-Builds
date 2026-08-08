@@ -10,3 +10,9 @@ diff --git a/applications/gpac/Makefile b/applications/gpac/Makefile
 @@ -62 +62 @@
 -LINKFLAGS+= -Wl,-rpath,'$$ORIGIN' -Wl,-rpath,$(prefix)/lib -Wl,-rpath-link,../../bin/gcc
 +LINKFLAGS+= -Wl,-rpath,'$$ORIGIN' -Wl,-rpath,$(prefix)/lib
+diff --git a/modules/common.mak b/modules/common.mak
+--- a/modules/common.mak
++++ b/modules/common.mak
+@@ -15 +15 @@
+-LDFLAGS+= -Wl,-rpath,'$$ORIGIN' -Wl,-rpath,$(prefix)/lib -Wl,-rpath-link,../../bin/gcc
++LDFLAGS+= -Wl,-rpath,'$$ORIGIN' -Wl,-rpath,$(prefix)/lib
