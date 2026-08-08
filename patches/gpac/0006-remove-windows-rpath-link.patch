@@ -1,24 +1,12 @@
 diff --git a/applications/mp4box/Makefile b/applications/mp4box/Makefile
 --- a/applications/mp4box/Makefile
 +++ b/applications/mp4box/Makefile
-@@ -16,6 +16,7 @@
- ifeq ($(CONFIG_EMSCRIPTEN),yes)
- else ifeq ($(CONFIG_DARWIN),yes)
- #LINKFLAGS+= -Wl,-rpath,'@loader_path'
-+else ifeq ($(CONFIG_WIN32),yes)
- else
- LINKFLAGS+= -Wl,-rpath,'$$ORIGIN' -Wl,-rpath,$(prefix)/lib -Wl,-rpath-link,../../bin/gcc
- endif
-
+@@ -28 +28 @@
+-LINKFLAGS+= -Wl,-rpath,'$$ORIGIN' -Wl,-rpath,$(prefix)/lib -Wl,-rpath-link,../../bin/gcc
++LINKFLAGS+= -Wl,-rpath,'$$ORIGIN' -Wl,-rpath,$(prefix)/lib
 diff --git a/applications/gpac/Makefile b/applications/gpac/Makefile
 --- a/applications/gpac/Makefile
 +++ b/applications/gpac/Makefile
-@@ -57,7 +57,8 @@
- LINKFLAGS+=-lgpac
- ifeq ($(CONFIG_EMSCRIPTEN),yes)
- else ifeq ($(CONFIG_DARWIN),yes)
- #LINKFLAGS+= -Wl,-rpath,'@loader_path'
-+else ifeq ($(CONFIG_WIN32),yes)
- else
- LINKFLAGS+= -Wl,-rpath,'$$ORIGIN' -Wl,-rpath,$(prefix)/lib -Wl,-rpath-link,../../bin/gcc
- endif
+@@ -62 +62 @@
+-LINKFLAGS+= -Wl,-rpath,'$$ORIGIN' -Wl,-rpath,$(prefix)/lib -Wl,-rpath-link,../../bin/gcc
++LINKFLAGS+= -Wl,-rpath,'$$ORIGIN' -Wl,-rpath,$(prefix)/lib
